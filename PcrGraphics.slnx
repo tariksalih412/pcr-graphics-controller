@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PcrGraphics.App/PcrGraphics.App.csproj" />
+    <Project Path="src/PcrGraphics.Core/PcrGraphics.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PcrGraphics.Core.Tests/PcrGraphics.Core.Tests.csproj" />
+  </Folder>
+</Solution>
