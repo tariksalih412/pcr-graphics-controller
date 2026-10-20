@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>lower_third</title>
+<!-- Needs internet for the web font; without it Tahoma is used. -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --name-bg: #0b2545;
+    --title-bg: #ffffff;
+    --accent: #c62828;
+    --ink: #0d1b2a;
+    --chalk: #ffffff;
+  }
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; }
+  body { font-family: "Cairo", Tahoma, Arial, sans-serif; }
+
+  /* bottom right, inside title-safe; revealed from the right edge (RTL) */
+  .lt {
+    position: absolute; right: 96px; bottom: 120px;
+    display: flex; flex-direction: column; align-items: flex-start;
+    clip-path: inset(0 0 0 100%);
+    transition: clip-path 500ms cubic-bezier(.2,.8,.2,1);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
+  }
+  .lt.on { clip-path: inset(0 0 0 0); }
+
+  .name {
+    background: var(--name-bg); color: var(--chalk);
+    font-weight: 800; font-size: 46px; line-height: 1.25;
+    padding: 10px 34px 12px; border-right: 10px solid var(--accent);
+    white-space: nowrap; unicode-bidi: plaintext;
+  }
+  .title {
+    background: var(--title-bg); color: var(--ink);
+    font-weight: 600; font-size: 28px; line-height: 1.3;
+    padding: 6px 34px 8px; margin-right: 10px;
+    white-space: nowrap; unicode-bidi: plaintext;
+  }
+  .title:empty { display: none; }
+</style>
+</head>
+<body>
+  <div class="lt" id="lt">
+    <div class="name" id="ltName"></div>
+    <div class="title" id="ltTitle"></div>
+  </div>
+
+<script>
+  const state = { name: "", title: "" };
+
+  function render() {
+    document.getElementById("ltName").textContent = state.name;
+    document.getElementById("ltTitle").textContent = state.title;
+  }
+
+  // ---- CasparCG HTML template API ----
+  function update(data) {
+    let d = data;
+    if (typeof d === "string") { try { d = JSON.parse(d); } catch (e) { return; } }
+    Object.assign(state, d);
+    render();
+  }
+  function play() { document.getElementById("lt").classList.add("on"); }
+  function stop() { document.getElementById("lt").classList.remove("on"); }
+  function next() {}
+
+  // Open in a browser with ?demo to preview without CasparCG
+  if (location.search.includes("demo")) {
+    update('{"name":"د. أحمد الخطيب","title":"محلل اقتصادي"}');
+    setTimeout(play, 300);
+    setTimeout(stop, 4000);
+  }
+</script>
+</body>
+</html>
