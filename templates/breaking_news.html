@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>breaking_news</title>
+<!-- Needs internet for the web font; without it Tahoma is used. -->
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --label-bg: #c62828;
+    --bar-bg: #ffffff;
+    --ink: #0d1b2a;
+    --chalk: #ffffff;
+  }
+  html, body { margin: 0; width: 1920px; height: 1080px; background: transparent; overflow: hidden; }
+  body { font-family: "Cairo", Tahoma, Arial, sans-serif; }
+
+  /* full-width strap, inside action-safe, revealed from the right edge (RTL) */
+  .bn {
+    position: absolute; right: 96px; left: 96px; bottom: 56px; height: 78px;
+    display: flex; align-items: stretch;
+    clip-path: inset(0 0 0 100%);
+    transition: clip-path 550ms cubic-bezier(.2,.8,.2,1);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.35));
+  }
+  .bn.on { clip-path: inset(0 0 0 0); }
+
+  .label {
+    background: var(--label-bg); color: var(--chalk);
+    font-weight: 800; font-size: 40px;
+    display: flex; align-items: center; padding: 0 34px;
+  }
+  .label span { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .55; } }
+
+  .bar {
+    flex: 1; background: var(--bar-bg); color: var(--ink);
+    display: flex; align-items: center; padding: 0 30px; overflow: hidden;
+  }
+  .headline {
+    font-weight: 800; font-size: 40px; white-space: nowrap; unicode-bidi: plaintext;
+  }
+</style>
+</head>
+<body>
+  <div class="bn" id="bn">
+    <div class="label"><span>عاجل</span></div>
+    <div class="bar" id="bar"><div class="headline" id="headline"></div></div>
+  </div>
+
+<script>
+  const state = { headline: "" };
+
+  // Long text shrinks to fit the bar instead of being cut.
+  function fit(el, maxWidth, size, min) {
+    el.style.fontSize = size + "px";
+    while (el.scrollWidth > maxWidth && size > min) {
+      size -= 1;
+      el.style.fontSize = size + "px";
+    }
+  }
+
+  function render() {
+    const el = document.getElementById("headline");
+    el.textContent = state.headline;
+    const room = document.getElementById("bar").clientWidth - 60;   // minus padding
+    fit(el, room, 40, 26);
+  }
+
+  // ---- CasparCG HTML template API ----
+  function update(data) {
+    let d = data;
+    if (typeof d === "string") { try { d = JSON.parse(d); } catch (e) { return; } }
+    Object.assign(state, d);
+    render();
+  }
+  function play() { document.getElementById("bn").classList.add("on"); }
+  function stop() { document.getElementById("bn").classList.remove("on"); }
+  function next() {}
+
+  if (location.search.includes("preview")) document.body.style.background = "#30343b";
+
+  if (location.search.includes("demo")) {
+    update('{"headline":"مجلس الأمن يعقد جلسة طارئة لبحث التطورات الأخيرة في المنطقة"}');
+    setTimeout(play, 300);
+    setTimeout(stop, 5000);
+  }
+</script>
+</body>
+</html>

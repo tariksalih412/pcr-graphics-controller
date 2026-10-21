@@ -2,96 +2,63 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PcrGraphics.Core.Amcp;
-using PcrGraphics.Core.Graphics;
 
 namespace PcrGraphics.App.ViewModels;
 
 /// <summary>
-/// Everything the window shows and every button it has. No WPF types here:
-/// the window binds to these properties and commands, and this class talks to Core.
+/// The whole control panel: one connection to CasparCG, several graphic slots
+/// (each on its own layer), a PANIC that clears all of them, and the AMCP log.
+/// Hotkeys act on the selected slot.
 /// </summary>
 public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 {
-    public const int MaxNameLength = 40;
-    public const int MaxTitleLength = 60;
     private const int MaxLogLines = 300;
-    private const string Template = "lower_third";
 
     private readonly CasparClient _client;
-    private readonly GraphicController _lowerThird;
     private readonly SynchronizationContext? _ui;
     private readonly CancellationTokenSource _cts = new();
-
-    private string _guestName = "";
-    private string _guestTitle = "";
-    private string _message = "Type a name, then CUE (F1)";
+    private GraphicSlotViewModel _selectedSlot;
     private ConnectionState _connection = ConnectionState.Disconnected;
+    private string _message = "Select a graphic, type the text, then CUE (F1)";
 
-    public MainViewModel(string host = "127.0.0.1", int port = 5250, int channel = 1, int layer = 30)
+    public MainViewModel(string host = "127.0.0.1", int port = 5250, int channel = 1)
     {
-        _ui = SynchronizationContext.Current;      // the UI thread; events from the network are sent back here
+        _ui = SynchronizationContext.Current;      // the UI thread; network events are sent back here
         _client = new CasparClient(host, port);
-        _lowerThird = new GraphicController(_client, new Layer(channel, layer));
 
-        CueCommand = new AsyncRelayCommand(CueAsync, () => Can(GraphicAction.Cue) && FieldsValid);
-        TakeInCommand = new AsyncRelayCommand(() => RunAsync("Take in", _lowerThird.TakeInAsync), () => Can(GraphicAction.TakeIn));
-        UpdateCommand = new AsyncRelayCommand(UpdateAsync, () => Can(GraphicAction.Update) && FieldsValid && HasPendingEdit);
-        TakeOutCommand = new AsyncRelayCommand(() => RunAsync("Take out", _lowerThird.TakeOutAsync), () => Can(GraphicAction.TakeOut));
-        PanicCommand = new AsyncRelayCommand(() => RunAsync("PANIC", _lowerThird.ClearAsync), () => IsConnected);
+        Slots.Add(new GraphicSlotViewModel("Lower third", "lower_third", new Layer(channel, 30), _client,
+            [new FieldSpec("name", "Name  /  الاسم", 40, Required: true), new FieldSpec("title", "Title  /  الصفة", 60)],
+            () => IsConnected, OnUi, m => Message = m));
+        Slots.Add(new GraphicSlotViewModel("Breaking news", "breaking_news", new Layer(channel, 31), _client,
+            [new FieldSpec("headline", "Headline  /  الخبر", 90, Required: true)],
+            () => IsConnected, OnUi, m => Message = m));
+        _selectedSlot = Slots[0];
+
+        PanicCommand = new AsyncRelayCommand(PanicAsync, () => IsConnected);
 
         _client.StateChanged += s => OnUi(() => Connection = s);
         _client.Log += line => OnUi(() => AddLog(line));
-        _lowerThird.Machine.Changed += () => OnUi(RefreshGraphic);
-
         _ = _client.RunAsync(_cts.Token);           // connect now and keep reconnecting in the background
     }
 
-    // ---------- commands (buttons and hotkeys) ----------
-    public AsyncRelayCommand CueCommand { get; }
-    public AsyncRelayCommand TakeInCommand { get; }
-    public AsyncRelayCommand UpdateCommand { get; }
-    public AsyncRelayCommand TakeOutCommand { get; }
+    public ObservableCollection<GraphicSlotViewModel> Slots { get; } = new();
+
+    /// <summary>The slot the editor, preview and hotkeys work on.</summary>
+    public GraphicSlotViewModel SelectedSlot
+    {
+        get => _selectedSlot;
+        set
+        {
+            if (value is null) return;
+            if (SetProperty(ref _selectedSlot, value)) SelectedSlotChanged?.Invoke();
+        }
+    }
+
+    /// <summary>Raised when another slot is selected, so the preview loads its template.</summary>
+    public event Action? SelectedSlotChanged;
+
     public AsyncRelayCommand PanicCommand { get; }
 
-    // ---------- input fields ----------
-    public string GuestName
-    {
-        get => _guestName;
-        set
-        {
-            if (!SetProperty(ref _guestName, value)) return;
-            OnPropertyChanged(nameof(NameCounter));
-            OnPropertyChanged(nameof(NameTooLong));
-            OnPropertyChanged(nameof(HasPendingEdit));
-            RefreshCommands();
-        }
-    }
-
-    public string GuestTitle
-    {
-        get => _guestTitle;
-        set
-        {
-            if (!SetProperty(ref _guestTitle, value)) return;
-            OnPropertyChanged(nameof(TitleCounter));
-            OnPropertyChanged(nameof(TitleTooLong));
-            OnPropertyChanged(nameof(HasPendingEdit));
-            RefreshCommands();
-        }
-    }
-
-    public string NameCounter => $"{GuestName.Trim().Length}/{MaxNameLength}";
-    public string TitleCounter => $"{GuestTitle.Trim().Length}/{MaxTitleLength}";
-    public bool NameTooLong => GuestName.Trim().Length > MaxNameLength;
-    public bool TitleTooLong => GuestTitle.Trim().Length > MaxTitleLength;
-    public bool FieldsValid => GuestName.Trim().Length > 0 && !NameTooLong && !TitleTooLong;
-
-    /// <summary>The fields differ from what is cued or on air: UPDATE (F4) would send them.</summary>
-    public bool HasPendingEdit =>
-        _lowerThird.Current is { } c &&
-        (c.Fields.GetValueOrDefault("name") != GuestName.Trim() || c.Fields.GetValueOrDefault("title") != GuestTitle.Trim());
-
-    // ---------- connection ----------
     public ConnectionState Connection
     {
         get => _connection;
@@ -100,33 +67,14 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
             if (!SetProperty(ref _connection, value)) return;
             OnPropertyChanged(nameof(IsConnected));
             OnPropertyChanged(nameof(ConnectionText));
-            RefreshCommands();
+            PanicCommand.NotifyCanExecuteChanged();
+            foreach (var s in Slots) s.Refresh();
         }
     }
 
     public bool IsConnected => Connection == ConnectionState.Connected;
     public string ConnectionText => $"CasparCG {_client.Endpoint}  ·  {Connection}";
 
-    // ---------- graphic state and tally ----------
-    public GraphicState State => _lowerThird.State;
-    public bool IsBusy => _lowerThird.Machine.IsBusy;
-    public bool TallyPreview => State == GraphicState.Cued;
-    public bool TallyProgram => State == GraphicState.OnAir;
-    public bool TallyUnknown => State == GraphicState.Unknown;
-
-    public string StateText => State switch
-    {
-        GraphicState.Empty => "EMPTY",
-        GraphicState.Cued => "CUED",
-        GraphicState.OnAir => "ON AIR",
-        _ => "UNKNOWN",
-    } + (IsBusy ? "  …" : "");
-
-    public string CurrentText => _lowerThird.Current is { } c
-        ? c.Fields.GetValueOrDefault("name") + "\n" + c.Fields.GetValueOrDefault("title")
-        : "—";
-
-    // ---------- feedback ----------
     public string Message
     {
         get => _message;
@@ -135,49 +83,16 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
     public ObservableCollection<string> Log { get; } = new();
 
-    // ---------- actions ----------
-    private bool Can(GraphicAction action) => IsConnected && _lowerThird.Machine.CanDo(action);
-
-    private Dictionary<string, string> Fields() => new()
+    /// <summary>Clears every graphics layer this app owns, one after the other, no animation.</summary>
+    private async Task PanicAsync()
     {
-        ["name"] = GuestName.Trim(),
-        ["title"] = GuestTitle.Trim(),
-    };
-
-    private Task CueAsync()
-    {
-        var item = new GraphicItem(GuestName.Trim(), Template, Fields());
-        return RunAsync("Cue", () => _lowerThird.CueAsync(item));
-    }
-
-    private Task UpdateAsync() => RunAsync("Update", () => _lowerThird.UpdateAsync(Fields()));
-
-    private async Task RunAsync(string label, Func<Task<bool>> action)
-    {
-        var ok = await action();
-        Message = ok ? $"{label}: OK" : $"{label} not done: {_lowerThird.LastError}";
-        RefreshGraphic();
-    }
-
-    // ---------- plumbing ----------
-    private void RefreshGraphic()
-    {
-        foreach (var name in new[]
-                 {
-                     nameof(State), nameof(IsBusy), nameof(StateText), nameof(TallyPreview),
-                     nameof(TallyProgram), nameof(TallyUnknown), nameof(CurrentText), nameof(HasPendingEdit),
-                 })
-            OnPropertyChanged(name);
-        RefreshCommands();
-    }
-
-    private void RefreshCommands()
-    {
-        CueCommand.NotifyCanExecuteChanged();
-        TakeInCommand.NotifyCanExecuteChanged();
-        UpdateCommand.NotifyCanExecuteChanged();
-        TakeOutCommand.NotifyCanExecuteChanged();
-        PanicCommand.NotifyCanExecuteChanged();
+        var failed = new List<string>();
+        foreach (var slot in Slots)
+        {
+            if (!await slot.Controller.ClearAsync()) failed.Add($"{slot.Title}: {slot.Controller.LastError}");
+            slot.Refresh();
+        }
+        Message = failed.Count == 0 ? "PANIC: all graphics cleared" : "PANIC incomplete: " + string.Join("; ", failed);
     }
 
     private void AddLog(string line)

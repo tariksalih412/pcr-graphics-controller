@@ -1,17 +1,18 @@
 <Window x:Class="PcrGraphics.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PCR Graphics" Height="700" Width="1140" MinWidth="960" MinHeight="600"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="PCR Graphics" Height="820" Width="1280" MinWidth="1100" MinHeight="720"
         WindowStartupLocation="CenterScreen"
         Background="#111316" Foreground="#E6E8EB" FontFamily="Segoe UI" FontSize="15"
-        PreviewKeyDown="Window_PreviewKeyDown" Closing="Window_Closing">
+        PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseDown="Window_PreviewMouseDown" Loaded="Window_Loaded" Closing="Window_Closing">
 
-    <!-- Hotkeys. Space for TAKE is handled in MainWindow.xaml.cs, only when not typing. -->
+    <!-- Hotkeys act on the selected graphic. Space for TAKE is handled in code, only when not typing. -->
     <Window.InputBindings>
-        <KeyBinding Key="F1" Command="{Binding CueCommand}" />
-        <KeyBinding Key="F2" Command="{Binding TakeInCommand}" />
-        <KeyBinding Key="F3" Command="{Binding TakeOutCommand}" />
-        <KeyBinding Key="F4" Command="{Binding UpdateCommand}" />
+        <KeyBinding Key="F1" Command="{Binding SelectedSlot.CueCommand}" />
+        <KeyBinding Key="F2" Command="{Binding SelectedSlot.TakeInCommand}" />
+        <KeyBinding Key="F3" Command="{Binding SelectedSlot.TakeOutCommand}" />
+        <KeyBinding Key="F4" Command="{Binding SelectedSlot.UpdateCommand}" />
         <KeyBinding Key="F12" Command="{Binding PanicCommand}" />
     </Window.InputBindings>
 
@@ -24,9 +25,9 @@
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="Background" Value="#2A2F37" />
             <Setter Property="BorderBrush" Value="#3B424D" />
-            <Setter Property="FontSize" Value="19" />
+            <Setter Property="FontSize" Value="18" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Height" Value="74" />
+            <Setter Property="Height" Value="68" />
             <Setter Property="Margin" Value="0,0,10,0" />
             <Setter Property="Cursor" Value="Hand" />
             <Setter Property="Template">
@@ -72,8 +73,8 @@
             <Setter Property="CaretBrush" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#3B424D" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="Padding" Value="10,8" />
-            <Setter Property="FontSize" Value="24" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="FontSize" Value="22" />
             <Setter Property="FlowDirection" Value="RightToLeft" />
         </Style>
 
@@ -82,6 +83,46 @@
             <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+
+        <!-- Small tally dot used in the graphics list -->
+        <Style x:Key="TallyDot" TargetType="Ellipse">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="Fill" Value="#3B424D" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding TallyPreview}" Value="True">
+                    <Setter Property="Fill" Value="#2E7D32" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TallyProgram}" Value="True">
+                    <Setter Property="Fill" Value="#E53935" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding TallyUnknown}" Value="True">
+                    <Setter Property="Fill" Value="#E08A00" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Graphics list items -->
+        <Style x:Key="SlotItem" TargetType="ListBoxItem">
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Foreground" Value="#E6E8EB" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="#1E2228" BorderBrush="#2A2F37" BorderThickness="1"
+                                CornerRadius="6" Padding="12,10">
+                            <ContentPresenter />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#26303D" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#5B8DEF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="Root" Focusable="True" Margin="18">
@@ -89,11 +130,11 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="170" />
+            <RowDefinition Height="130" />
         </Grid.RowDefinitions>
 
         <!-- Top bar: connection + panic -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,16" LastChildFill="False">
+        <DockPanel Grid.Row="0" Margin="0,0,0,14" LastChildFill="False">
             <Ellipse Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,10,0">
                 <Ellipse.Style>
                     <Style TargetType="Ellipse">
@@ -106,95 +147,121 @@
                     </Style>
                 </Ellipse.Style>
             </Ellipse>
-            <TextBlock Text="{Binding ConnectionText}" VerticalAlignment="Center" FontSize="15" />
+            <TextBlock Text="{Binding ConnectionText}" VerticalAlignment="Center" />
             <Button DockPanel.Dock="Right" Style="{StaticResource PanicButton}"
-                    Command="{Binding PanicCommand}" Content="PANIC  ·  F12" />
+                    Command="{Binding PanicCommand}" Content="PANIC ALL  ·  F12" />
         </DockPanel>
 
-        <!-- Main area: editor on the left, tally on the right -->
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230" />
+                <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="330" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="290" />
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" Background="#181B20" CornerRadius="8" Padding="20">
-                <StackPanel>
-                    <TextBlock Text="LOWER THIRD  ·  layer 1-30" Style="{StaticResource Caption}" Margin="0,0,0,14" />
+            <!-- Graphics list: choose which graphic the editor and hotkeys act on -->
+            <DockPanel Grid.Column="0">
+                <TextBlock DockPanel.Dock="Top" Text="GRAPHICS  ·  ↑ ↓" Style="{StaticResource Caption}" Margin="0,0,0,10" />
+                <ListBox ItemsSource="{Binding Slots}" SelectedItem="{Binding SelectedSlot}"
+                         ItemContainerStyle="{StaticResource SlotItem}"
+                         Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <Ellipse DockPanel.Dock="Right" Style="{StaticResource TallyDot}" VerticalAlignment="Center" />
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="16" />
+                                    <TextBlock Text="{Binding StateText}" Foreground="#8B93A1" FontSize="12" />
+                                </StackPanel>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
 
-                    <DockPanel Margin="0,0,0,6">
-                        <TextBlock Text="Name  /  الاسم" Style="{StaticResource Caption}" />
-                        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Text="{Binding NameCounter}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding NameTooLong}" Value="True">
-                                            <Setter Property="Foreground" Value="#FF6B6B" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </DockPanel>
-                    <TextBox Style="{StaticResource FieldBox}"
-                             Text="{Binding GuestName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16" />
+            <!-- Editor + preview for the selected graphic -->
+            <Border Grid.Column="2" Background="#181B20" CornerRadius="8" Padding="18">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Style="{StaticResource Caption}" Margin="0,0,0,10">
+                        <Run Text="{Binding SelectedSlot.Title, Mode=OneWay}" />
+                        <Run Text="  ·  " />
+                        <Run Text="{Binding SelectedSlot.LayerText, Mode=OneWay}" />
+                    </TextBlock>
 
-                    <DockPanel Margin="0,0,0,6">
-                        <TextBlock Text="Title  /  الصفة" Style="{StaticResource Caption}" />
-                        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Text="{Binding TitleCounter}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding TitleTooLong}" Value="True">
-                                            <Setter Property="Foreground" Value="#FF6B6B" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </DockPanel>
-                    <TextBox Style="{StaticResource FieldBox}"
-                             Text="{Binding GuestTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" />
+                    <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding SelectedSlot.Fields}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="0,0,0,10">
+                                    <DockPanel Margin="0,0,0,4">
+                                        <TextBlock Text="{Binding Label}" Style="{StaticResource Caption}" />
+                                        <TextBlock DockPanel.Dock="Right" HorizontalAlignment="Right" Text="{Binding Counter}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource Caption}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding TooLong}" Value="True">
+                                                            <Setter Property="Foreground" Value="#FF6B6B" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DockPanel>
+                                    <TextBox Style="{StaticResource FieldBox}"
+                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                    <TextBlock Text="Text differs from the cued / on-air graphic: press UPDATE (F4) to send it."
-                               Foreground="#F0B429" FontSize="13" Margin="0,0,0,14"
-                               Visibility="{Binding HasPendingEdit, Converter={StaticResource BoolToVis}}" />
+                    <TextBlock DockPanel.Dock="Top" Foreground="#F0B429" FontSize="13" Margin="0,0,0,8"
+                               Text="Text differs from the cued / on-air graphic: press UPDATE (F4) to send it."
+                               Visibility="{Binding SelectedSlot.HasPendingEdit, Converter={StaticResource BoolToVis}}" />
 
-                    <UniformGrid Columns="4" Margin="0,8,-10,0">
-                        <Button Style="{StaticResource CueButton}" Command="{Binding CueCommand}">
+                    <UniformGrid DockPanel.Dock="Bottom" Columns="4" Margin="0,10,-10,0">
+                        <Button Style="{StaticResource CueButton}" Command="{Binding SelectedSlot.CueCommand}">
                             <TextBlock TextAlignment="Center">CUE<LineBreak /><Run FontSize="12" Text="F1" /></TextBlock>
                         </Button>
-                        <Button Style="{StaticResource TakeButton}" Command="{Binding TakeInCommand}">
+                        <Button Style="{StaticResource TakeButton}" Command="{Binding SelectedSlot.TakeInCommand}">
                             <TextBlock TextAlignment="Center">TAKE IN<LineBreak /><Run FontSize="12" Text="F2 / Space" /></TextBlock>
                         </Button>
-                        <Button Style="{StaticResource ControlButton}" Command="{Binding TakeOutCommand}">
+                        <Button Style="{StaticResource ControlButton}" Command="{Binding SelectedSlot.TakeOutCommand}">
                             <TextBlock TextAlignment="Center">TAKE OUT<LineBreak /><Run FontSize="12" Text="F3" /></TextBlock>
                         </Button>
-                        <Button Style="{StaticResource ControlButton}" Command="{Binding UpdateCommand}">
+                        <Button Style="{StaticResource ControlButton}" Command="{Binding SelectedSlot.UpdateCommand}">
                             <TextBlock TextAlignment="Center">UPDATE<LineBreak /><Run FontSize="12" Text="F4" /></TextBlock>
                         </Button>
                     </UniformGrid>
 
-                    <TextBlock Text="Esc: leave the text field so Space works as TAKE IN"
-                               Style="{StaticResource Caption}" FontWeight="Normal" Margin="0,14,0,0" />
-                </StackPanel>
+                    <!-- Preview: the real template rendered by WebView2 (Chromium), like CasparCG does -->
+                    <Grid x:Name="PreviewHost" Margin="0,6,0,0" SizeChanged="PreviewHost_SizeChanged">
+                    <Border x:Name="PreviewFrame" Background="#30343B" BorderBrush="#3B424D" BorderThickness="1"
+                            HorizontalAlignment="Center" VerticalAlignment="Top">
+                        <Grid>
+                            <wv2:WebView2 x:Name="Preview" />
+                            <TextBlock x:Name="PreviewError" Visibility="Collapsed" TextWrapping="Wrap"
+                                       Foreground="#F0B429" Margin="16" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    </Grid>
+                </DockPanel>
             </Border>
 
-            <!-- Tally -->
-            <Border Grid.Column="2" Background="#181B20" CornerRadius="8" Padding="20">
+            <!-- Tally for the selected graphic -->
+            <Border Grid.Column="4" Background="#181B20" CornerRadius="8" Padding="18">
                 <StackPanel>
-                    <TextBlock Text="TALLY" Style="{StaticResource Caption}" Margin="0,0,0,14" />
-                    <UniformGrid Columns="2" Margin="0,0,0,18">
-                        <Border Height="74" CornerRadius="6" Margin="0,0,6,0">
+                    <TextBlock Text="TALLY" Style="{StaticResource Caption}" Margin="0,0,0,12" />
+                    <UniformGrid Columns="2" Margin="0,0,0,16">
+                        <Border Height="70" CornerRadius="6" Margin="0,0,6,0">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="#262A31" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding TallyPreview}" Value="True">
+                                        <DataTrigger Binding="{Binding SelectedSlot.TallyPreview}" Value="True">
                                             <Setter Property="Background" Value="#2E7D32" />
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding TallyUnknown}" Value="True">
+                                        <DataTrigger Binding="{Binding SelectedSlot.TallyUnknown}" Value="True">
                                             <Setter Property="Background" Value="#E08A00" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -203,15 +270,15 @@
                             <TextBlock Text="PVW" FontSize="22" FontWeight="Bold"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
-                        <Border Height="74" CornerRadius="6" Margin="6,0,0,0">
+                        <Border Height="70" CornerRadius="6" Margin="6,0,0,0">
                             <Border.Style>
                                 <Style TargetType="Border">
                                     <Setter Property="Background" Value="#262A31" />
                                     <Style.Triggers>
-                                        <DataTrigger Binding="{Binding TallyProgram}" Value="True">
+                                        <DataTrigger Binding="{Binding SelectedSlot.TallyProgram}" Value="True">
                                             <Setter Property="Background" Value="#C62828" />
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding TallyUnknown}" Value="True">
+                                        <DataTrigger Binding="{Binding SelectedSlot.TallyUnknown}" Value="True">
                                             <Setter Property="Background" Value="#E08A00" />
                                         </DataTrigger>
                                     </Style.Triggers>
@@ -223,21 +290,20 @@
                     </UniformGrid>
 
                     <TextBlock Text="STATE" Style="{StaticResource Caption}" />
-                    <TextBlock Text="{Binding StateText}" FontSize="28" FontWeight="Bold" Margin="0,2,0,16" />
+                    <TextBlock Text="{Binding SelectedSlot.StateText}" FontSize="26" FontWeight="Bold" Margin="0,2,0,14" />
 
                     <TextBlock Text="ON THE LAYER" Style="{StaticResource Caption}" />
-                    <TextBlock Text="{Binding CurrentText}" FontSize="17" TextWrapping="Wrap"
-                               FlowDirection="RightToLeft" Margin="0,4,0,16" />
+                    <TextBlock Text="{Binding SelectedSlot.CurrentText}" FontSize="16" TextWrapping="Wrap"
+                               FlowDirection="RightToLeft" Margin="0,4,0,14" />
 
                     <TextBlock TextWrapping="Wrap" Foreground="#F0B429" FontSize="13"
-                               Visibility="{Binding TallyUnknown, Converter={StaticResource BoolToVis}}"
-                               Text="Lost contact while a graphic was loaded. What is on air is unknown: press PANIC (F12) once CasparCG is connected." />
+                               Visibility="{Binding SelectedSlot.TallyUnknown, Converter={StaticResource BoolToVis}}"
+                               Text="Lost contact while this graphic was loaded. What is on air is unknown: press PANIC (F12) once CasparCG is connected." />
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- Last result -->
-        <TextBlock Grid.Row="2" Text="{Binding Message}" Margin="2,14,0,8" FontSize="15" Foreground="#C9CED6" />
+        <TextBlock Grid.Row="2" Text="{Binding Message}" Margin="2,12,0,8" Foreground="#C9CED6" />
 
         <!-- AMCP log, newest first -->
         <ListBox Grid.Row="3" ItemsSource="{Binding Log}" Background="#0C0E10" Foreground="#9FD1A7"
