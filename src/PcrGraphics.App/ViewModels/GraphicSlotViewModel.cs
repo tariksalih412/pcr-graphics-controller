@@ -57,6 +57,9 @@ public sealed class GraphicSlotViewModel : ObservableObject
     public AsyncRelayCommand UpdateCommand { get; }
     public AsyncRelayCommand TakeOutCommand { get; }
 
+    /// <summary>Raised after every state or button refresh (the rundown uses it for its tally dots).</summary>
+    public event Action? Refreshed;
+
     /// <summary>Raised whenever the text changes, so the preview can redraw.</summary>
     public event Action? PreviewChanged;
 
@@ -103,7 +106,23 @@ public sealed class GraphicSlotViewModel : ObservableObject
         TakeInCommand.NotifyCanExecuteChanged();
         UpdateCommand.NotifyCanExecuteChanged();
         TakeOutCommand.NotifyCanExecuteChanged();
+        Refreshed?.Invoke();
     }
+
+    /// <summary>Fills the fields from a prepared item (fields it does not have are emptied).</summary>
+    public void LoadValues(IReadOnlyDictionary<string, string> values)
+    {
+        foreach (var f in Fields) f.Value = values.GetValueOrDefault(f.Spec.Key, "");
+    }
+
+    /// <summary>The fields as a rundown item.</summary>
+    public GraphicItem ToItem() =>
+        new(Fields.Select(f => f.Trimmed).FirstOrDefault(v => v.Length > 0) ?? Title, Template, Values());
+
+    /// <summary>Is this item what is cued or on air on this slot right now?</summary>
+    public bool Holds(GraphicItem item) =>
+        item.Template == Template && _controller.Current is { } c &&
+        Fields.All(f => c.Fields.GetValueOrDefault(f.Spec.Key, "") == item.Fields.GetValueOrDefault(f.Spec.Key, ""));
 
     private bool Can(GraphicAction action) => _isConnected() && _controller.Machine.CanDo(action);
 

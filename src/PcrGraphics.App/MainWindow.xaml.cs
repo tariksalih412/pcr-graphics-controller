@@ -28,6 +28,25 @@ public partial class MainWindow : Window
         var port = args.Length > 2 && int.TryParse(args[2], out var p) ? p : 5250;
         DataContext = _vm = new MainViewModel(host, port);
 
+        // File dialogs live in the window; the view model only receives the chosen path.
+        var rundownDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PcrGraphics", "rundowns");
+        Directory.CreateDirectory(rundownDir);
+        _vm.AskOpenPath = () =>
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog { Filter = "Rundown (*.json)|*.json", InitialDirectory = rundownDir };
+            return dlg.ShowDialog(this) == true ? dlg.FileName : null;
+        };
+        _vm.AskSavePath = () =>
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "Rundown (*.json)|*.json",
+                InitialDirectory = rundownDir,
+                FileName = $"rundown-{DateTime.Now:yyyy-MM-dd}.json",
+            };
+            return dlg.ShowDialog(this) == true ? dlg.FileName : null;
+        };
+
         // Typing redraws the preview after a short pause instead of on every key.
         _previewDelay.Tick += async (_, _) =>
         {

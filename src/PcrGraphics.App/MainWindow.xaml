@@ -10,6 +10,9 @@
     <!-- Hotkeys act on the selected graphic. Space for TAKE is handled in code, only when not typing. -->
     <Window.InputBindings>
         <KeyBinding Key="F1" Command="{Binding SelectedSlot.CueCommand}" />
+        <KeyBinding Key="F5" Command="{Binding NextCommand}" />
+        <KeyBinding Key="S" Modifiers="Control" Command="{Binding SaveRundownCommand}" />
+        <KeyBinding Key="O" Modifiers="Control" Command="{Binding OpenRundownCommand}" />
         <KeyBinding Key="F2" Command="{Binding SelectedSlot.TakeInCommand}" />
         <KeyBinding Key="F3" Command="{Binding SelectedSlot.TakeOutCommand}" />
         <KeyBinding Key="F4" Command="{Binding SelectedSlot.UpdateCommand}" />
@@ -65,6 +68,12 @@
             <Setter Property="Height" Value="52" />
             <Setter Property="Width" Value="220" />
             <Setter Property="Margin" Value="0" />
+        </Style>
+
+        <Style x:Key="SmallButton" TargetType="Button" BasedOn="{StaticResource ControlButton}">
+            <Setter Property="Height" Value="34" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Margin" Value="0,0,6,6" />
         </Style>
 
         <Style x:Key="FieldBox" TargetType="TextBox">
@@ -154,17 +163,24 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="230" />
+                <ColumnDefinition Width="290" />
                 <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="290" />
             </Grid.ColumnDefinitions>
 
-            <!-- Graphics list: choose which graphic the editor and hotkeys act on -->
-            <DockPanel Grid.Column="0">
-                <TextBlock DockPanel.Dock="Top" Text="GRAPHICS  ·  ↑ ↓" Style="{StaticResource Caption}" Margin="0,0,0,10" />
-                <ListBox ItemsSource="{Binding Slots}" SelectedItem="{Binding SelectedSlot}"
+            <!-- Left column: graphics (slots) on top, rundown below -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Text="GRAPHICS  ·  ↑ ↓" Style="{StaticResource Caption}" Margin="0,0,0,10" />
+                <ListBox Grid.Row="1" Margin="0,0,0,14" ItemsSource="{Binding Slots}" SelectedItem="{Binding SelectedSlot}"
                          ItemContainerStyle="{StaticResource SlotItem}"
                          Background="Transparent" BorderThickness="0">
                     <ListBox.ItemTemplate>
@@ -179,7 +195,56 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-            </DockPanel>
+
+                <!-- Rundown: graphics prepared before the show, in running order -->
+                <DockPanel Grid.Row="2">
+                    <TextBlock DockPanel.Dock="Top" Text="RUNDOWN  ·  F5 next  ·  Enter load" Style="{StaticResource Caption}" />
+                    <TextBlock DockPanel.Dock="Top" Text="{Binding RundownTitle}" Foreground="#6F7784" FontSize="12" Margin="0,2,0,8" />
+                    <ListBox ItemsSource="{Binding Rundown}" SelectedItem="{Binding SelectedItem}"
+                             ItemContainerStyle="{StaticResource SlotItem}"
+                             Background="Transparent" BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding LoadItemCommand}" />
+                            <MouseBinding Gesture="LeftDoubleClick" Command="{Binding LoadItemCommand}" />
+                        </ListBox.InputBindings>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel>
+                                    <Ellipse DockPanel.Dock="Right" Style="{StaticResource TallyDot}" VerticalAlignment="Center" Margin="8,0,0,0" />
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding SlotTitle}" Foreground="#6F7784" FontSize="10" FontWeight="SemiBold" />
+                                            <Border Background="#F0B429" CornerRadius="3" Padding="5,0" Margin="8,0,0,0"
+                                                    Visibility="{Binding IsNext, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="NEXT  F5" Foreground="#111316" FontSize="10" FontWeight="Bold" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Line1}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding Line2}" Foreground="#8B93A1" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+
+                <StackPanel Grid.Row="3" Margin="0,8,0,0">
+                    <UniformGrid Columns="5" Margin="0,0,-6,0">
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding AddToRundownCommand}" Content="+ ADD" ToolTip="Add the editor text to the rundown" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding LoadItemCommand}" Content="LOAD" ToolTip="Load the selected item into the editor (Enter)" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding MoveUpCommand}" Content="▲" ToolTip="Move up" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding MoveDownCommand}" Content="▼" ToolTip="Move down" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding RemoveItemCommand}" Content="✕" ToolTip="Remove" />
+                    </UniformGrid>
+                    <UniformGrid Columns="3" Margin="0,0,-6,0">
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding NewRundownCommand}" Content="NEW" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding OpenRundownCommand}" Content="OPEN  ·  Ctrl+O" />
+                        <Button Style="{StaticResource SmallButton}" Command="{Binding SaveRundownCommand}" Content="SAVE  ·  Ctrl+S" />
+                    </UniformGrid>
+                </StackPanel>
+            </Grid>
+
 
             <!-- Editor + preview for the selected graphic -->
             <Border Grid.Column="2" Background="#181B20" CornerRadius="8" Padding="18">
