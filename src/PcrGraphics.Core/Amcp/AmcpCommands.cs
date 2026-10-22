@@ -41,6 +41,12 @@ public static class AmcpCommands
 
     public static string Version() => "VERSION";
 
+    /// <summary>
+    /// What is loaded on a channel. On CasparCG 2.5.1 "INFO 1-30" returns the whole channel too,
+    /// so we ask once per channel and read the layers out of the XML (see ChannelInfo).
+    /// </summary>
+    public static string Info(int channel) => $"INFO {channel}";
+
     private static string TemplateRef(string template) =>
         template.Contains(' ') ? Quote(template) : template;
 }

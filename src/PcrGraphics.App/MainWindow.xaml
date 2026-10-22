@@ -363,7 +363,7 @@
 
                     <TextBlock TextWrapping="Wrap" Foreground="#F0B429" FontSize="13"
                                Visibility="{Binding SelectedSlot.TallyUnknown, Converter={StaticResource BoolToVis}}"
-                               Text="Lost contact while this graphic was loaded. What is on air is unknown: press PANIC (F12) once CasparCG is connected." />
+                               Text="CasparCG has a graphic on this layer, but this app cannot confirm whether it is on air (a command was cut off, or it was loaded before this app started). Press PANIC (F12) to clear it." />
                 </StackPanel>
             </Border>
         </Grid>

@@ -142,22 +142,40 @@ public sealed class CasparClient : IAsyncDisposable
         }
     }
 
-    private static async Task<AmcpReply> ReadReplyAsync(StreamReader reader, CancellationToken ct)
+    private async Task<AmcpReply> ReadReplyAsync(StreamReader reader, CancellationToken ct)
     {
-        var first = await reader.ReadLineAsync(ct) ?? throw new IOException("CasparCG closed the connection");
-        var (code, status) = AmcpReply.ParseStatusLine(first);
+        // Skip anything that is not a status line (left over from an earlier reply whose
+        // length we could not know), so this reply still belongs to this command.
+        int code;
+        string status;
+        while (true)
+        {
+            var line = await reader.ReadLineAsync(ct) ?? throw new IOException("CasparCG closed the connection");
+            (code, status) = AmcpReply.ParseStatusLine(line);
+            if (code != 0) break;
+            if (line.Length > 0) Log?.Invoke("<< (skipped stray line) " + line);
+        }
+
         var data = new List<string>();
         var expected = AmcpReply.DataLinesFor(code);
         if (expected == 1)
         {
-            data.Add(await reader.ReadLineAsync(ct) ?? "");
+            var first = await reader.ReadLineAsync(ct) ?? "";
+            data.Add(first);
+            if (code == 201 && AmcpReply.StartsXml(first))       // INFO on 2.5.1: XML until an empty line
+                await ReadUntilEmptyLineAsync(reader, data, ct);
         }
         else if (expected == -1)
         {
-            while (await reader.ReadLineAsync(ct) is { Length: > 0 } line)
-                data.Add(line);
+            await ReadUntilEmptyLineAsync(reader, data, ct);
         }
         return new AmcpReply(code, status, data);
+    }
+
+    private static async Task ReadUntilEmptyLineAsync(StreamReader reader, List<string> data, CancellationToken ct)
+    {
+        while (await reader.ReadLineAsync(ct) is { Length: > 0 } line)
+            data.Add(line);
     }
 
     private void Close()

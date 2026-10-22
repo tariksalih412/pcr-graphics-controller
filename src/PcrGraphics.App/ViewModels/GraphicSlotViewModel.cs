@@ -26,7 +26,7 @@ public sealed class GraphicSlotViewModel : ObservableObject
         _isConnected = isConnected;
         _onUi = onUi;
         _report = report;
-        _controller = new GraphicController(client, layer);
+        _controller = new GraphicController(client, layer, template);
 
         foreach (var spec in fields)
         {

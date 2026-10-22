@@ -480,3 +480,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# archives (build outputs sent for diagnosis, release zips)
+*.rar
+*.zip

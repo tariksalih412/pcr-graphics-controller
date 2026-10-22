@@ -1,0 +1,590 @@
+
+########## 0. server
+>> VERSION
+   [line endings: CRLF; total chars: 38]
+<< 201 VERSION OK
+<< 2.5.1 ec38d94 Stable
+>> VERSION SERVER
+   [line endings: CRLF; total chars: 38]
+<< 201 VERSION OK
+<< 2.5.1 ec38d94 Stable
+>> INFO
+   [line endings: CRLF; total chars: 36]
+<< 200 INFO OK
+<< 1 1080i5000 PLAYING
+<< (empty line)
+
+########## 1. layer EMPTY
+>> CLEAR 1-30
+   [line endings: CRLF; total chars: 14]
+<< 202 CLEAR OK
+>> INFO 1
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)
+>> INFO 1-30
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)
+>> CG 1-30 INFO
+   [line endings: CRLF; total chars: 25]
+<< 400 ERROR
+<< CG 1-30 INFO
+>> CG 1-30 INFO 1
+   [line endings: CRLF; total chars: 27]
+<< 400 ERROR
+<< CG 1-30 INFO 1
+
+########## 2. CUED (CG ADD ... 0)
+>> CG 1-30 ADD 1 lower_third 0 "{\"name\":\"Probe Name\",\"title\":\"Probe Title\"}"
+   [line endings: CRLF; total chars: 11]
+<< 202 CG OK
+>> INFO 1-30
+   [line endings: CRLF; total chars: 1618]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<<    <stage>
+<<       <layer>
+<<          <layer_30>
+<<             <background>
+<<                <producer>empty</producer>
+<<             </background>
+<<             <foreground>
+<<                <file>
+<<                   <path>file://C:\Users\Tarik\Downloads\broadcast engineering\broadcast developer\casparcg-server-v2.5.1-windows\template/lower_third.html</path>
+<<                </file>
+<<                <paused>false</paused>
+<<                <producer>html</producer>
+<<             </foreground>
+<<          </layer_30>
+<<       </layer>
+<<    </stage>
+<< </channel>
+<< (empty line)
+>> CG 1-30 INFO
+   [line endings: CRLF; total chars: 25]
+<< 400 ERROR
+<< CG 1-30 INFO
+>> CG 1-30 INFO 1
+   [line endings: CRLF; total chars: 27]
+<< 400 ERROR
+<< CG 1-30 INFO 1
+
+########## 3. ON AIR (CG PLAY)
+>> CG 1-30 PLAY 1
+   [line endings: CRLF; total chars: 11]
+<< 202 CG OK
+>> INFO 1
+   [line endings: CRLF; total chars: 1618]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<<    <stage>
+<<       <layer>
+<<          <layer_30>
+<<             <background>
+<<                <producer>empty</producer>
+<<             </background>
+<<             <foreground>
+<<                <file>
+<<                   <path>file://C:\Users\Tarik\Downloads\broadcast engineering\broadcast developer\casparcg-server-v2.5.1-windows\template/lower_third.html</path>
+<<                </file>
+<<                <paused>false</paused>
+<<                <producer>html</producer>
+<<             </foreground>
+<<          </layer_30>
+<<       </layer>
+<<    </stage>
+<< </channel>
+<< (empty line)
+>> INFO 1-30
+   [line endings: CRLF; total chars: 1618]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<<    <stage>
+<<       <layer>
+<<          <layer_30>
+<<             <background>
+<<                <producer>empty</producer>
+<<             </background>
+<<             <foreground>
+<<                <file>
+<<                   <path>file://C:\Users\Tarik\Downloads\broadcast engineering\broadcast developer\casparcg-server-v2.5.1-windows\template/lower_third.html</path>
+<<                </file>
+<<                <paused>false</paused>
+<<                <producer>html</producer>
+<<             </foreground>
+<<          </layer_30>
+<<       </layer>
+<<    </stage>
+<< </channel>
+<< (empty line)
+>> CG 1-30 INFO 1
+   [line endings: CRLF; total chars: 27]
+<< 400 ERROR
+<< CG 1-30 INFO 1
+
+########## 4. after TAKE OUT (CG STOP)
+>> CG 1-30 STOP 1
+   [line endings: CRLF; total chars: 11]
+<< 202 CG OK
+>> INFO 1-30
+   [line endings: CRLF; total chars: 1618]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<<    <stage>
+<<       <layer>
+<<          <layer_30>
+<<             <background>
+<<                <producer>empty</producer>
+<<             </background>
+<<             <foreground>
+<<                <file>
+<<                   <path>file://C:\Users\Tarik\Downloads\broadcast engineering\broadcast developer\casparcg-server-v2.5.1-windows\template/lower_third.html</path>
+<<                </file>
+<<                <paused>false</paused>
+<<                <producer>html</producer>
+<<             </foreground>
+<<          </layer_30>
+<<       </layer>
+<<    </stage>
+<< </channel>
+<< (empty line)
+>> CG 1-30 INFO 1
+   [line endings: CRLF; total chars: 27]
+<< 400 ERROR
+<< CG 1-30 INFO 1
+
+########## 5. after CLEAR
+>> CLEAR 1-30
+   [line endings: CRLF; total chars: 14]
+<< 202 CLEAR OK
+>> INFO 1-30
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)
+
+########## 6. other forms (may be rejected - that is useful too)
+>> INFO 1-31
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)
+>> INFO 1 STATE
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)
+>> INFO 1-30 FOREGROUND
+   [line endings: CRLF; total chars: 1095]
+<< 201 INFO OK
+<< <?xml version="1.0" encoding="utf-8"?>
+<< <channel>
+<<    <format>1080i5000</format>
+<<    <framerate>50</framerate>
+<<    <framerate>1</framerate>
+<<    <mixer>
+<<       <audio>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<          <volume>0</volume>
+<<       </audio>
+<<    </mixer>
+<<    <output>
+<<       <port>
+<<          <port_500>
+<<             <consumer>system-audio</consumer>
+<<          </port_500>
+<<          <port_600>
+<<             <consumer>screen</consumer>
+<<             <screen>
+<<                <always_on_top>false</always_on_top>
+<<                <index>0</index>
+<<                <key_only>false</key_only>
+<<                <name>Screen consumer</name>
+<<             </screen>
+<<          </port_600>
+<<       </port>
+<<    </output>
+<< </channel>
+<< (empty line)

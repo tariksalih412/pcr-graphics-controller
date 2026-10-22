@@ -25,7 +25,9 @@ catch (Exception ex)
 }
 await caspar.SendAsync(AmcpCommands.Version());
 
-var graphic = new GraphicController(caspar, new Layer(1, 30));
+var graphic = new GraphicController(caspar, new Layer(1, 30), "scorebug");
+var sync = new LayerSync(caspar, [graphic], syncOnConnect: false);
+sync.Log += line => Console.WriteLine("   " + line);
 var item = new GraphicItem("Test scorebug", "scorebug", new Dictionary<string, string>
 {
     ["home"] = "السد", ["away"] = "الدحيل",
@@ -33,7 +35,7 @@ var item = new GraphicItem("Test scorebug", "scorebug", new Dictionary<string, s
 });
 
 Console.WriteLine();
-Console.WriteLine("c = cue   t = take in   u = update   o = take out   p = panic (clear)   q = quit");
+Console.WriteLine("c = cue   t = take in   u = update   o = take out   p = panic (clear)   s = sync with INFO   q = quit");
 while (true)
 {
     Console.Write($"[{graphic.State}] > ");
@@ -47,6 +49,7 @@ while (true)
         "u" => graphic.UpdateAsync(new Dictionary<string, string> { ["homeScore"] = "1", ["minute"] = "23" }),
         "o" => graphic.TakeOutAsync(),
         "p" => graphic.ClearAsync(),
+        "s" => sync.SyncAsync(),
         _ => null,
     };
     if (action is null) { Console.WriteLine("   unknown key"); continue; }

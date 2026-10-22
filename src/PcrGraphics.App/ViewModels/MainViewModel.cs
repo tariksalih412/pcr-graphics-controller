@@ -18,6 +18,7 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     private const int MaxLogLines = 300;
 
     private readonly CasparClient _client;
+    private readonly LayerSync _sync;
     private readonly SynchronizationContext? _ui;
     private readonly CancellationTokenSource _cts = new();
     private GraphicSlotViewModel _selectedSlot;
@@ -72,6 +73,11 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
 
         _client.StateChanged += s => OnUi(() => Connection = s);
         _client.Log += line => OnUi(() => AddLog(line));
+
+        // On every connect: ask CasparCG what is really on layers 1-30 / 1-31 (phase 6).
+        _sync = new LayerSync(_client, Slots.Select(s => s.Controller));
+        _sync.Log += line => OnUi(() => AddLog(line));
+        _sync.Completed += ok => OnUi(() => OnSynced(ok));
         _ = _client.RunAsync(_cts.Token);           // connect now and keep reconnecting in the background
     }
 
@@ -149,6 +155,20 @@ public sealed class MainViewModel : ObservableObject, IAsyncDisposable
     }
 
     public ObservableCollection<string> Log { get; } = new();
+
+    /// <summary>After a sync: tell the operator what needs attention.</summary>
+    private void OnSynced(bool ok)
+    {
+        foreach (var s in Slots) s.Refresh();
+        var unknown = Slots.Where(s => s.State == GraphicState.Unknown).Select(s => s.Title).ToList();
+        if (!ok)
+            Message = "Connected, but could not read CasparCG's layers: states kept as they were (see log)";
+        else if (unknown.Count > 0)
+            Message = $"Connected. Not confirmed on air or off: {string.Join(", ", unknown)}  ·  PANIC (F12) to clear";
+        else
+            Message = "Connected. Layer states checked with CasparCG: " +
+                      string.Join(", ", Slots.Select(s => $"{s.Title} {s.StateText}"));
+    }
 
     /// <summary>Clears every graphics layer this app owns, one after the other, no animation.</summary>
     private async Task PanicAsync()

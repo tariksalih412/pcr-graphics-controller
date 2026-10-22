@@ -11,10 +11,11 @@ public sealed class GraphicController
 {
     private readonly CasparClient _client;
 
-    public GraphicController(CasparClient client, Layer layer)
+    public GraphicController(CasparClient client, Layer layer, string? template = null)
     {
         _client = client;
         Layer = layer;
+        Template = template;
         _client.StateChanged += s =>
         {
             if (s == ConnectionState.Disconnected) Machine.ConnectionLost();
@@ -22,6 +23,9 @@ public sealed class GraphicController
     }
 
     public Layer Layer { get; }
+
+    /// <summary>The template this layer is for (e.g. "lower_third"); used to recognise it after a reconnect.</summary>
+    public string? Template { get; }
     public GraphicStateMachine Machine { get; } = new();
     public GraphicState State => Machine.State;
 
@@ -46,6 +50,29 @@ public sealed class GraphicController
     /// <summary>Panic: clears the layer at once. Allowed in every state, even while busy.</summary>
     public Task<bool> ClearAsync() =>
         RunAsync(GraphicAction.Clear, AmcpCommands.Clear(Layer), () => Current = null);
+
+    /// <summary>
+    /// Applies what CasparCG reports for this layer (from INFO). Returns a log line describing
+    /// the outcome, or null if the layer was busy and nothing changed.
+    /// </summary>
+    public string? Reconcile(LayerContent? onServer)
+    {
+        var before = State;
+        var template = Template ?? Current?.Template;
+        var ours = onServer is not null && template is not null && onServer.IsTemplate(template);
+        if (!Machine.Reconcile(onServer is null, ours)) return null;
+
+        if (State == GraphicState.Empty) Current = null;
+        var found = onServer is null ? "empty" : $"{onServer.Producer} {onServer.FileName ?? onServer.Path ?? "?"}";
+        var why = State switch
+        {
+            GraphicState.Unknown when !ours => " (not this app's template: CLEAR it)",
+            GraphicState.Unknown => " (cued or on air cannot be told apart: CLEAR it)",
+            _ when before == GraphicState.Unknown && State != GraphicState.Empty => " (restored)",
+            _ => "",
+        };
+        return $"{Layer}: CasparCG has {found} -> {before} => {State}{why}";
+    }
 
     private async Task<bool> RunAsync(GraphicAction action, string command, Action? onAccepted = null)
     {
