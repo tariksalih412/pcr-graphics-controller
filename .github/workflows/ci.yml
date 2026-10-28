@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write          # needed to create the GitHub release on a v* tag
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build (Core, App, tests, CLI)
+        run: dotnet build PcrGraphics.slnx -c Release
+
+      - name: Test
+        run: dotnet test tests/PcrGraphics.Core.Tests -c Release --no-build --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults/*.trx
+
+      - name: Publish single-file exe
+        shell: pwsh
+        run: ./tools/publish.ps1 -SkipTests
+
+      - name: Upload release zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: PcrGraphics-win-x64
+          path: publish/*.zip
+
+      - name: Create GitHub release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $zip = Get-ChildItem publish/*.zip | Select-Object -First 1
+          if ("v" + ($zip.BaseName -replace '^PcrGraphics-v|-win-x64$', '') -ne $tag) {
+            throw "Tag $tag does not match the version in the csproj ($($zip.Name))"
+          }
+          if (gh release view $tag 2>$null) { gh release upload $tag $zip.FullName --clobber }
+          else { gh release create $tag $zip.FullName --title "PCR Graphics Controller $tag" --notes-file docs/RELEASE_NOTES.md }

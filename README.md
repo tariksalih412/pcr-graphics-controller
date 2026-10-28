@@ -1,5 +1,7 @@
 # PCR Graphics Controller
 
+[![CI](https://github.com/tariksalih412/pcr-graphics-controller/actions/workflows/ci.yml/badge.svg)](https://github.com/tariksalih412/pcr-graphics-controller/actions/workflows/ci.yml)
+
 An on-air graphics control panel for a production control room (PCR), driving **CasparCG Server** over **AMCP**.
 An operator cues, takes in, updates and takes out Arabic lower thirds and a breaking-news strap from a
 keyboard-first WPF panel, with a live preview, a show rundown, and tally that only changes when CasparCG confirms.
