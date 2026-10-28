@@ -10,6 +10,14 @@ keyboard-first WPF panel, with a live preview, a show rundown, and tally that on
 
 ![CasparCG output at the same moment](docs/images/casparcg-output.png)
 
+   ### Demo
+
+
+
+https://github.com/user-attachments/assets/aeab6469-14f4-4581-beb1-ea6cc538a821
+
+
+
 Second project in a broadcast-developer portfolio, after
 [live-sports-graphics-controller](https://github.com/tariksalih412/live-sports-graphics-controller)
 (Python, API-Football data → CasparCG scorebug).
