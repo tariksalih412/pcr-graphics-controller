@@ -67,7 +67,12 @@ public partial class MainWindow : Window
     {
         try
         {
-            await Preview.EnsureCoreWebView2Async();
+            // WebView2 keeps a cache folder. By default it goes next to the exe, which fails when the
+            // exe sits in a read-only place (Program Files, a network share): use the user's AppData.
+            var dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "PcrGraphics", "WebView2");
+            var env = await CoreWebView2Environment.CreateAsync(null, dataDir);
+            await Preview.EnsureCoreWebView2Async(env);
             await ShowPreviewAsync();
         }
         catch (Exception ex)

@@ -5,7 +5,8 @@ namespace PcrGraphics.App;
 
 public partial class App : Application
 {
-    private static readonly string CrashLog = Path.Combine(AppContext.BaseDirectory, "crash.log");
+    /// <summary>Next to the exe; if that folder is read-only, %LOCALAPPDATA%\PcrGraphics\crash.log.</summary>
+    private static string CrashLog = Path.Combine(AppContext.BaseDirectory, "crash.log");
 
     public App()
     {
@@ -24,7 +25,16 @@ public partial class App : Application
 
     private static void Write(string where, Exception? ex)
     {
-        try { File.AppendAllText(CrashLog, $"==== {DateTime.Now:yyyy-MM-dd HH:mm:ss} · {where}\n{ex}\n\n"); }
+        var text = $"==== {DateTime.Now:yyyy-MM-dd HH:mm:ss} · {where}\n{ex}\n\n";
+        try { File.AppendAllText(CrashLog, text); return; }
+        catch { /* read-only folder: try AppData below */ }
+        try
+        {
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "PcrGraphics");
+            Directory.CreateDirectory(dir);
+            CrashLog = Path.Combine(dir, "crash.log");
+            File.AppendAllText(CrashLog, text);
+        }
         catch { /* never crash while logging a crash */ }
     }
 }
