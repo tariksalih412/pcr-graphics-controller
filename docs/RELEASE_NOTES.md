@@ -16,3 +16,5 @@ First release of the PCR Graphics Controller: an on-air graphics control panel f
 - Embedded Cairo font: works on a playout machine without internet
 
 See the README and docs/DEVELOPMENT_LOG.md in the repository.
+
+**Demo video:** `pcr-graphics-demo.mp4` below (about 90 s): rundown, cue/take, update on air, both graphics together, re-sync after a dropped link, PANIC.
